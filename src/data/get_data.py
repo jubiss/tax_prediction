@@ -22,7 +22,7 @@ class get_data():
             if get_column_names:
                 columns = self.column_names(cursor=cursor, table_name=table_name)
                 # Execute a query to fetch the table data
-                query = f"SELECT * FROM {table_name}"
+                query = f"SELECT {','.join(columns)} FROM {table_name}"
                 cursor.execute(query)
 
             else:
@@ -38,12 +38,13 @@ class get_data():
             else:
                 # Transform in Dataframe
                 df = pd.DataFrame(rows, columns=columns)
-  
+
             # Save table data to a CSV file
-            if table_name:
-                df.to_csv(fr'data\raw\{table_name}.csv')
-            else:
-                df.to_csv(r'data\raw\table.csv')
+            if table_name == None:
+                table_name = 'table'
+
+            df.to_csv(fr'data\raw\{table_name}.csv', index=False)
+
             # Close the cursor and connection
             cursor.close()
             cnx.close()
