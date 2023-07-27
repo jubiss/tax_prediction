@@ -1,17 +1,51 @@
+import sys,os
+sys.path.append(os.getcwd())
 import pandas as pd
-import src.features as features
-import src.models as models
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 import joblib
+from src.features import build_features
+import src.models as models
+from src.utils import utils
+
 
 model_type = 'classification'
 
-datapath = '\data\raw\table.csv'
+datapath = r'data\processed\nfe_das_data.csv'
 df = pd.read_csv(datapath)
 
-target = None
-validation, df = df[:len(df)*0.2], df[len(df)*0.2:]
+df, many_to_one_relation = utils.many_to_one(df, index_columns=['CNPJ_CPF', 'NUMERO'])
+
+target = 'ICMS DEVIDO'
 X, y = df.drop(columns=target), df[target]
+
+pivot = build_features.PivotPipeline(index=['index', 'UF', 'FRETE'],
+                                     columns = 'CODIGONCM',
+                                     values = 'TOTAL COM IMPOSTOS',
+                                     aggfunc = 'sum',
+                                     fill_value=  0,
+                                     prefix_text= 'NCM',
+                                     sufix_text= 'VALUE')
+
+enc = OneHotEncoder(handle_unknown='ignore')
+categorical_features = ['UF']
+
+transform_categorical = ColumnTransformer(
+    transformers=[
+        ('OneHotEncoder', enc, categorical_features)
+    ]
+)
+
+X, y = pivot.fit_transform(X, y)
+
+
+breakpoint()
+
+
+"""target = None
+validation, df = df[:len(df)*0.2], df[len(df)*0.2:]
 
 X_val, y_val = validation.drop(columns=target), df[target]
 
@@ -36,4 +70,4 @@ if model_type == 'classification':
 
 # Save Model
 model_name = 'last_model'
-joblib.dump(cv_result, f'models\{model_name}')
+joblib.dump(cv_result, f'models\{model_name}')"""
